@@ -36,7 +36,9 @@ def list_messages(messages, mbox):
 
         print("%d. %s" % (count, message_id))
 
-        with open(mbox[message_id][0], 'r') as fp:
+        with open(mbox[message_id][0], 'r',
+                  encoding='utf-8',
+                  errors='replace') as fp:
             msg = email.message_from_file(fp)
             print("%sSubject: %s" % (offset * ' ', msg['subject']))
             print("%sDate: %s" % (offset * ' ', msg['date']))
