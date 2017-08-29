@@ -93,13 +93,13 @@ def list_differences(messages, L, R, lroot, rroot):
         offset = print_message(message_id,
                                os.path.join(lroot, L[message_id][0]),
                                count)
-        print((offset + 2) * ' ' + 7 * '<' + lroot)
+        print((offset + 2) * ' ' + 7 * '<' + ' ' + lroot)
         for path in L[message_id]:
             print((offset + 2) * ' ' + path)
         print((offset + 2) * ' ' + 7 * '=')
         for path in R[message_id]:
             print((offset + 2) * ' ' + path)
-        print((offset + 2) * ' ' + 7 * '>' + rroot)
+        print((offset + 2) * ' ' + 7 * '>' + ' ' + rroot)
 
 
 def index(messages, mbox, root):
@@ -149,17 +149,17 @@ def diff(left, right, direction, lroot, rroot):
         return
 
     if uniqueL and (direction is 'l' or direction is 'b'):
-        print(80*'-')
+        print(79*'-')
         print("Only in %s:" % lroot)
         list_messages(uniqueL, L, lroot)
 
     if uniqueR and (direction is 'r' or direction is 'b'):
-        print(80*'-')
+        print(79*'-')
         print("Only in %s:" % rroot)
         list_messages(uniqueR, R, rroot)
 
     if different and direction is 'b':
-        print(80*'-')
+        print(79*'-')
         print("Different locations:")
         list_differences(different, L, R, lroot, rroot)
 
