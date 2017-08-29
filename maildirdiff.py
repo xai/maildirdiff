@@ -57,6 +57,7 @@ def get_maildirs(directory):
 
 def print_message(message_id, path, count):
     offset = (len(str(count)) + 3)
+    print()
     print("%d. %s" % (count, message_id))
 
     if verbose:
@@ -126,10 +127,8 @@ def diff(left, right, direction, lroot, rroot):
     R = {}
 
     for l in left:
-        print("Indexing " + l)
         index(L, mailbox.Maildir(l), lroot)
     for r in right:
-        print("Indexing " + r)
         index(R, mailbox.Maildir(r), rroot)
 
     print()
