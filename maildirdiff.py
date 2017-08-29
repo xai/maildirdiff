@@ -122,6 +122,11 @@ def index(messages, mbox, root):
         index(messages, subdir, root)
 
 
+def get_mailbox_dir(location):
+    return os.path.relpath(os.path.join(os.path.dirname(location),
+                                        os.path.pardir))
+
+
 def diff(left, right, direction, lroot, rroot):
     L = {}
     R = {}
@@ -136,8 +141,8 @@ def diff(left, right, direction, lroot, rroot):
     uniqueL = [msg for msg in L if msg not in R]
     uniqueR = [msg for msg in R if msg not in L]
     different = [msg for msg in (m for m in L if m in R)
-                 if set(os.path.dirname(l) for l in L[msg])
-                 != set(os.path.dirname(r) for r in R[msg])]
+                 if set(get_mailbox_dir(l) for l in L[msg])
+                 != set(get_mailbox_dir(r) for r in R[msg])]
 
     if not uniqueL and not uniqueR:
         print("No differences found.")
