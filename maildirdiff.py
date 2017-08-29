@@ -55,29 +55,53 @@ def get_maildirs(directory):
     return maildirs
 
 
-def list_messages(messages, mbox):
+def print_message(message_id, path, count):
+    offset = (len(str(count)) + 3)
+    print("%d. %s" % (count, message_id))
+
+    if verbose:
+        with open(path, 'r',
+                  encoding='utf-8',
+                  errors='replace') as fp:
+            msg = email.message_from_file(fp)
+            print("%sSubject: %s" % (offset * ' ', msg['subject']))
+            print("%sDate: %s" % (offset * ' ', msg['date']))
+            print("%sFrom: %s" % (offset * ' ', msg['from']))
+
+    return offset
+
+
+def list_messages(messages, mbox, root):
     count = 0
 
     for message_id in messages:
         count += 1
-        offset = (len(str(count)) + 2)
 
-        print("%d. %s" % (count, message_id))
-
-        if verbose:
-            with open(mbox[message_id][0], 'r',
-                      encoding='utf-8',
-                      errors='replace') as fp:
-                msg = email.message_from_file(fp)
-                print("%sSubject: %s" % (offset * ' ', msg['subject']))
-                print("%sDate: %s" % (offset * ' ', msg['date']))
-                print("%sFrom: %s" % (offset * ' ', msg['from']))
-
+        offset = print_message(message_id,
+                               os.path.join(root, mbox[message_id][0]),
+                               count)
         for path in mbox[message_id]:
             print((offset + 2) * ' ' + path)
 
 
-def index(messages, mbox):
+def list_differences(messages, L, R, lroot, rroot):
+    count = 0
+
+    for message_id in messages:
+        count += 1
+        offset = print_message(message_id,
+                               os.path.join(lroot, L[message_id][0]),
+                               count)
+        print((offset + 2) * ' ' + 7 * '<' + lroot)
+        for path in L[message_id]:
+            print((offset + 2) * ' ' + path)
+        print((offset + 2) * ' ' + 7 * '=')
+        for path in R[message_id]:
+            print((offset + 2) * ' ' + path)
+        print((offset + 2) * ' ' + 7 * '>' + rroot)
+
+
+def index(messages, mbox, root):
 
     for key, message in mbox.iteritems():
         message_id = message['Message-Id']
@@ -85,31 +109,36 @@ def index(messages, mbox):
             # TODO: print warning or info
             continue
 
+        location = os.path.relpath(os.path.join(mbox._path, mbox._toc[key]),
+                                   root)
         if message_id in messages:
-            messages[message_id].append(mbox._path + os.sep + mbox._toc[key])
+            messages[message_id].append(location)
         else:
-            messages[message_id] = [mbox._path + os.sep + mbox._toc[key]]
+            messages[message_id] = [location]
 
     for subdir in mbox.list_folders():
         print("Subdir found: %s", subdir)
-        index(messages, subdir)
+        index(messages, subdir, root)
 
 
-def diff(left, right, direction):
+def diff(left, right, direction, lroot, rroot):
     L = {}
     R = {}
 
     for l in left:
         print("Indexing " + l)
-        index(L, mailbox.Maildir(l))
+        index(L, mailbox.Maildir(l), lroot)
     for r in right:
         print("Indexing " + r)
-        index(R, mailbox.Maildir(r))
+        index(R, mailbox.Maildir(r), rroot)
 
     print()
 
     uniqueL = [msg for msg in L if msg not in R]
     uniqueR = [msg for msg in R if msg not in L]
+    different = [msg for msg in (m for m in L if m in R)
+                 if set(os.path.dirname(l) for l in L[msg])
+                 != set(os.path.dirname(r) for r in R[msg])]
 
     if not uniqueL and not uniqueR:
         print("No differences found.")
@@ -117,13 +146,18 @@ def diff(left, right, direction):
 
     if uniqueL and (direction is 'l' or direction is 'b'):
         print(80*'-')
-        print("Only in %s:" % left)
-        list_messages(uniqueL, L)
+        print("Only in %s:" % lroot)
+        list_messages(uniqueL, L, lroot)
 
     if uniqueR and (direction is 'r' or direction is 'b'):
         print(80*'-')
-        print("Only in %s:" % right)
-        list_messages(uniqueR, R)
+        print("Only in %s:" % rroot)
+        list_messages(uniqueR, R, rroot)
+
+    if different and direction is 'b':
+        print(80*'-')
+        print("Different locations:")
+        list_differences(different, L, R, lroot, rroot)
 
 
 if __name__ == "__main__":
@@ -159,4 +193,4 @@ if __name__ == "__main__":
     left = get_maildirs(maildirs[0])
     right = get_maildirs(maildirs[1])
 
-    diff(left, right, direction)
+    diff(left, right, direction, maildirs[0], maildirs[1])
