@@ -23,6 +23,9 @@ import email
 import mailbox
 
 
+verbose = False
+
+
 def print_usage(path):
     print("Usage: %s [MAILDIR1] [MAILDIR2]" % path)
 
@@ -61,13 +64,14 @@ def list_messages(messages, mbox):
 
         print("%d. %s" % (count, message_id))
 
-        with open(mbox[message_id][0], 'r',
-                  encoding='utf-8',
-                  errors='replace') as fp:
-            msg = email.message_from_file(fp)
-            print("%sSubject: %s" % (offset * ' ', msg['subject']))
-            print("%sDate: %s" % (offset * ' ', msg['date']))
-            print("%sFrom: %s" % (offset * ' ', msg['from']))
+        if verbose:
+            with open(mbox[message_id][0], 'r',
+                      encoding='utf-8',
+                      errors='replace') as fp:
+                msg = email.message_from_file(fp)
+                print("%sSubject: %s" % (offset * ' ', msg['subject']))
+                print("%sDate: %s" % (offset * ' ', msg['date']))
+                print("%sFrom: %s" % (offset * ' ', msg['from']))
 
         for path in mbox[message_id]:
             print((offset + 2) * ' ' + path)
@@ -91,7 +95,7 @@ def index(messages, mbox):
         index(messages, subdir)
 
 
-def diff(left, right):
+def diff(left, right, direction):
     L = {}
     R = {}
 
@@ -111,12 +115,12 @@ def diff(left, right):
         print("No differences found.")
         return
 
-    if uniqueL:
+    if uniqueL and (direction is 'l' or direction is 'b'):
         print(80*'-')
         print("Only in %s:" % left)
         list_messages(uniqueL, L)
 
-    if uniqueR:
+    if uniqueR and (direction is 'r' or direction is 'b'):
         print(80*'-')
         print("Only in %s:" % right)
         list_messages(uniqueR, R)
@@ -124,9 +128,28 @@ def diff(left, right):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("-l",
+                        "--left",
+                        help="show only changes in left",
+                        action="store_true")
+    parser.add_argument("-r",
+                        "--right",
+                        help="show only changes in right",
+                        action="store_true")
+    parser.add_argument("-v",
+                        "--verbose",
+                        help="show metadata of mails",
+                        action="store_true")
     parser.add_argument("target_dirs", default=[], nargs="+")
     args = parser.parse_args()
 
+    direction = 'b'
+    if args.left and not args.right:
+        direction = 'l'
+    elif args.right and not args.left:
+        direction = 'r'
+
+    verbose = args.verbose
     maildirs = args.target_dirs
 
     if len(maildirs) != 2:
@@ -136,4 +159,4 @@ if __name__ == "__main__":
     left = get_maildirs(maildirs[0])
     right = get_maildirs(maildirs[1])
 
-    diff(left, right)
+    diff(left, right, direction)
