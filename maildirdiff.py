@@ -27,6 +27,31 @@ def print_usage(path):
     print("Usage: %s [MAILDIR1] [MAILDIR2]" % path)
 
 
+def is_maildir(directory):
+    if not os.path.isdir(directory):
+        return False
+
+    subdirs = ['cur', 'new', 'tmp']
+
+    for s in subdirs:
+        if not os.path.isdir(os.path.join(directory, s)):
+            return False
+
+    return True
+
+
+def get_maildirs(directory):
+    if is_maildir(directory):
+        return [directory]
+
+    maildirs = []
+    for d in os.listdir(directory):
+        if is_maildir(os.path.join(directory, d)):
+            maildirs.append(os.path.join(directory, d))
+
+    return maildirs
+
+
 def list_messages(messages, mbox):
     count = 0
 
@@ -66,12 +91,18 @@ def index(messages, mbox):
         index(messages, subdir)
 
 
-def diff(first, second):
+def diff(left, right):
     L = {}
     R = {}
 
-    index(L, mailbox.Maildir(first))
-    index(R, mailbox.Maildir(second))
+    for l in left:
+        print("Indexing " + l)
+        index(L, mailbox.Maildir(l))
+    for r in right:
+        print("Indexing " + r)
+        index(R, mailbox.Maildir(r))
+
+    print()
 
     uniqueL = [msg for msg in L if msg not in R]
     uniqueR = [msg for msg in R if msg not in L]
@@ -82,12 +113,12 @@ def diff(first, second):
 
     if uniqueL:
         print(80*'-')
-        print("Only in %s:" % first)
+        print("Only in %s:" % left)
         list_messages(uniqueL, L)
 
     if uniqueR:
         print(80*'-')
-        print("Only in %s:" % second)
+        print("Only in %s:" % right)
         list_messages(uniqueR, R)
 
 
@@ -102,4 +133,7 @@ if __name__ == "__main__":
         print_usage(parser.prog)
         exit(1)
 
-    diff(maildirs[0], maildirs[1])
+    left = get_maildirs(maildirs[0])
+    right = get_maildirs(maildirs[1])
+
+    diff(left, right)
