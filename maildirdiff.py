@@ -178,7 +178,7 @@ def diff(left, right, direction, lroot, rroot):
                  if set(get_mailbox_dir(l) for l in L[msg])
                  != set(get_mailbox_dir(r) for r in R[msg])]
 
-    if not uniqueL and not uniqueR:
+    if not uniqueL and not uniqueR and not different:
         print("No differences found.")
         return
 
