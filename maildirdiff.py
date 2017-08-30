@@ -24,6 +24,7 @@ import mailbox
 
 
 verbose = False
+oneline = False
 
 
 def print_usage(path):
@@ -57,17 +58,36 @@ def get_maildirs(directory):
 
 def print_message(message_id, path, count):
     offset = (len(str(count)) + 3)
-    print()
-    print("%d. %s" % (count, message_id))
+
+    if not oneline:
+        print()
+        print("%d. %s" % (count, message_id))
 
     if verbose:
         with open(path, 'r',
                   encoding='utf-8',
                   errors='replace') as fp:
             msg = email.message_from_file(fp)
-            print("%sSubject: %s" % (offset * ' ', msg['subject']))
-            print("%sDate: %s" % (offset * ' ', msg['date']))
-            print("%sFrom: %s" % (offset * ' ', msg['from']))
+
+            if oneline:
+                dt = email.utils.parsedate_to_datetime(msg['date'])
+                date = dt.strftime('%Y-%m-%d %H:%M')
+
+                sender = email.utils.parseaddr(msg['from'])[1]
+
+                subject, encoding = email.header.decode_header(msg['subject'])[0]
+                if encoding:
+                    subject = subject.decode(encoding)
+                # subject = subject.replace('\n', ' ').replace('\r', '')
+
+                print("%4d | %s | %-30s | %-40s | " % (count,
+                                                    date,
+                                                    sender[:30],
+                                                    subject[:40]), end='')
+            else:
+                print("%sSubject: %s" % (offset * ' ', msg['subject']))
+                print("%sDate: %s" % (offset * ' ', msg['date']))
+                print("%sFrom: %s" % (offset * ' ', msg['from']))
 
     return offset
 
@@ -81,8 +101,11 @@ def list_messages(messages, mbox, root):
         offset = print_message(message_id,
                                os.path.join(root, mbox[message_id][0]),
                                count)
-        for path in mbox[message_id]:
-            print((offset + 2) * ' ' + path)
+        if oneline:
+            print(' '.join(mbox[message_id]))
+        else:
+            for path in mbox[message_id]:
+                print((offset + 2) * ' ' + path)
 
 
 def list_differences(messages, L, R, lroot, rroot):
@@ -93,13 +116,21 @@ def list_differences(messages, L, R, lroot, rroot):
         offset = print_message(message_id,
                                os.path.join(lroot, L[message_id][0]),
                                count)
-        print((offset + 2) * ' ' + 7 * '<' + ' ' + lroot)
-        for path in L[message_id]:
-            print((offset + 2) * ' ' + path)
-        print((offset + 2) * ' ' + 7 * '=')
-        for path in R[message_id]:
-            print((offset + 2) * ' ' + path)
-        print((offset + 2) * ' ' + 7 * '>' + ' ' + rroot)
+        if oneline:
+            print(' (%s) <===> (%s)' % (' '.join(
+                                            [get_mailbox_dir(l) for l in
+                                             L[message_id]]),
+                                        ' '.join(
+                                            [get_mailbox_dir(r) for r in
+                                             R[message_id]])))
+        else:
+            print((offset + 2) * ' ' + 7 * '<' + ' ' + lroot)
+            for path in L[message_id]:
+                print((offset + 2) * ' ' + path)
+            print((offset + 2) * ' ' + 7 * '=')
+            for path in R[message_id]:
+                print((offset + 2) * ' ' + path)
+            print((offset + 2) * ' ' + 7 * '>' + ' ' + rroot)
 
 
 def index(messages, mbox, root):
@@ -174,6 +205,10 @@ if __name__ == "__main__":
                         "--right",
                         help="show only changes in right",
                         action="store_true")
+    parser.add_argument("-o",
+                        "--oneline",
+                        help="show metadata of mails in one line. Implies -v",
+                        action="store_true")
     parser.add_argument("-v",
                         "--verbose",
                         help="show metadata of mails",
@@ -187,8 +222,9 @@ if __name__ == "__main__":
     elif args.right and not args.left:
         direction = 'r'
 
-    verbose = args.verbose
     maildirs = args.target_dirs
+    oneline = args.oneline
+    verbose = args.verbose or oneline
 
     if len(maildirs) != 2:
         print_usage(parser.prog)
