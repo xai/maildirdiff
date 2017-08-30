@@ -143,10 +143,13 @@ def index(messages, mbox, root):
 
         location = os.path.relpath(os.path.join(mbox._path, mbox._toc[key]),
                                    root)
-        if message_id in messages:
-            messages[message_id].append(location)
-        else:
-            messages[message_id] = [location]
+        try:
+            if message_id in messages:
+                messages[message_id].append(location)
+            else:
+                messages[message_id] = [location]
+        except TypeError:
+            pass
 
     for subdir in mbox.list_folders():
         print("Subdir found: %s", subdir)
