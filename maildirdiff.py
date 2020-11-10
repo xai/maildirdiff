@@ -75,15 +75,16 @@ def print_message(message_id, path, count):
 
                 sender = email.utils.parseaddr(msg['from'])[1]
 
-                subject, encoding = email.header.decode_header(msg['subject'])[0]
+                subject, encoding = email.header\
+                    .decode_header(msg['subject'])[0]
                 if encoding:
                     subject = subject.decode(encoding)
                 # subject = subject.replace('\n', ' ').replace('\r', '')
 
                 print("%4d | %s | %-30s | %-40s | " % (count,
-                                                    date,
-                                                    sender[:30],
-                                                    subject[:40]), end='')
+                                                       date,
+                                                       sender[:30],
+                                                       subject[:40]), end='')
             else:
                 print("%sSubject: %s" % (offset * ' ', msg['subject']))
                 print("%sDate: %s" % (offset * ' ', msg['date']))
@@ -182,17 +183,17 @@ def diff(left, right, direction, lroot, rroot):
         print("No differences found.")
         return
 
-    if uniqueL and (direction is 'l' or direction is 'b'):
+    if uniqueL and (direction == 'l' or direction == 'b'):
         print(79*'-')
         print("Only in %s:" % lroot)
         list_messages(uniqueL, L, lroot)
 
-    if uniqueR and (direction is 'r' or direction is 'b'):
+    if uniqueR and (direction == 'r' or direction == 'b'):
         print(79*'-')
         print("Only in %s:" % rroot)
         list_messages(uniqueR, R, rroot)
 
-    if different and direction is 'b':
+    if different and direction == 'b':
         print(79*'-')
         print("Different locations:")
         list_differences(different, L, R, lroot, rroot)
