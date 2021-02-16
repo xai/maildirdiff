@@ -18,6 +18,7 @@
 
 import argparse
 import os
+import sys
 
 import email
 import mailbox
@@ -162,7 +163,7 @@ def get_mailbox_dir(location):
                                         os.path.pardir))
 
 
-def diff(left, right, direction, lroot, rroot):
+def diff(left, right, direction, lroot, rroot, quiet=False):
     L = {}
     R = {}
 
@@ -171,17 +172,21 @@ def diff(left, right, direction, lroot, rroot):
     for r in right:
         index(R, mailbox.Maildir(r), rroot)
 
-    print()
+    if not quiet:
+        print()
 
     uniqueL = [msg for msg in L if msg not in R]
     uniqueR = [msg for msg in R if msg not in L]
     different = [msg for msg in (m for m in L if m in R)
                  if set(get_mailbox_dir(l) for l in L[msg])
                  != set(get_mailbox_dir(r) for r in R[msg])]
+    sum = len(uniqueL) + len(uniqueR) + len(different)
 
-    if not uniqueL and not uniqueR and not different:
+    if quiet:
+        return sum
+    elif sum == 0:
         print("No differences found.")
-        return
+        return sum
 
     if uniqueL and (direction == 'l' or direction == 'b'):
         print(79*'-')
@@ -198,6 +203,8 @@ def diff(left, right, direction, lroot, rroot):
         print("Different locations:")
         list_differences(different, L, R, lroot, rroot)
 
+    return sum
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -212,6 +219,10 @@ if __name__ == "__main__":
     parser.add_argument("-o",
                         "--oneline",
                         help="show metadata of mails in one line. Implies -v",
+                        action="store_true")
+    parser.add_argument("-q",
+                        "--quiet",
+                        help="Do not print output",
                         action="store_true")
     parser.add_argument("-v",
                         "--verbose",
@@ -228,6 +239,7 @@ if __name__ == "__main__":
 
     maildirs = args.target_dirs
     oneline = args.oneline
+    quiet = args.quiet
     verbose = args.verbose or oneline
 
     if len(maildirs) != 2:
@@ -237,4 +249,5 @@ if __name__ == "__main__":
     left = get_maildirs(maildirs[0])
     right = get_maildirs(maildirs[1])
 
-    diff(left, right, direction, maildirs[0], maildirs[1])
+    changed = diff(left, right, direction, maildirs[0], maildirs[1], quiet)
+    sys.exit(changed)
