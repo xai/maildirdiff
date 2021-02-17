@@ -104,7 +104,7 @@ def list_messages(messages, mbox, root):
                                os.path.join(root, mbox[message_id][0]),
                                count)
         if oneline:
-            print(' '.join(mbox[message_id]))
+            print(os.path.join(root, ' '.join(mbox[message_id])))
         else:
             for path in mbox[message_id]:
                 print((offset + 2) * ' ' + path)
@@ -185,7 +185,7 @@ def diff(left, right, direction, lroot, rroot, quiet=False):
     if quiet:
         return sum
     elif sum == 0:
-        print("No differences found.")
+        print("No differences found between %s and %s." % (lroot, rroot))
         return sum
 
     if uniqueL and (direction == 'l' or direction == 'b'):
