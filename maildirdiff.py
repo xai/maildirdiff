@@ -71,21 +71,27 @@ def print_message(message_id, path, count):
             msg = email.message_from_file(fp)
 
             if oneline:
-                dt = email.utils.parsedate_to_datetime(msg['date'])
-                date = dt.strftime('%Y-%m-%d %H:%M')
+                try:
+                    dt = email.utils.parsedate_to_datetime(msg['date'])
+                    date = dt.strftime('%Y-%m-%d %H:%M')
+                    sender = email.utils.parseaddr(msg['from'])[1]
+                    subject = ''
 
-                sender = email.utils.parseaddr(msg['from'])[1]
+                    if msg['subject']:
+                        subject, encoding = email.header\
+                            .decode_header(msg['subject'])[0]
+                        if encoding:
+                            subject = subject.decode(encoding)
+                        # subject = subject.replace('\n', ' ').replace('\r', '')
+                        if subject:
+                            subject = str(subject).replace('|', '/')
 
-                subject, encoding = email.header\
-                    .decode_header(msg['subject'])[0]
-                if encoding:
-                    subject = subject.decode(encoding)
-                # subject = subject.replace('\n', ' ').replace('\r', '')
-
-                print("%4d | %s | %-30s | %-40s | " % (count,
-                                                       date,
-                                                       sender[:30],
-                                                       subject[:40]), end='')
+                    print("%4d | %s | %-30s | %-40s | " % (count,
+                                                           date,
+                                                           sender[:30],
+                                                           subject[:40]), end='')
+                except TypeError as e:
+                    print("Cannot read file %s" % path, file=sys.stderr)
             else:
                 print("%sSubject: %s" % (offset * ' ', msg['subject']))
                 print("%sDate: %s" % (offset * ' ', msg['date']))
