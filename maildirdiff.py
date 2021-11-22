@@ -160,7 +160,7 @@ def index(messages, mbox, root):
             pass
 
     for subdir in mbox.list_folders():
-        print("Subdir found: %s", subdir)
+        print("Subdir found: %s" % subdir)
         index(messages, subdir, root)
 
 
