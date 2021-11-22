@@ -159,9 +159,9 @@ def index(messages, mbox, root):
         except TypeError:
             pass
 
-    for subdir in mbox.list_folders():
-        print("Subdir found: %s" % subdir)
-        index(messages, subdir, root)
+    for folder in mbox.list_folders():
+        print("Folder found: %s" % folder)
+        index(messages, folder, root)
 
 
 def get_mailbox_dir(location):
