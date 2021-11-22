@@ -160,8 +160,12 @@ def index(messages, mbox, root):
             pass
 
     for folder in mbox.list_folders():
-        print("Folder found: %s" % folder)
-        index(messages, folder, root)
+        folder_mbox = mbox.get_folder(folder)
+        if is_maildir(folder_mbox._path):
+            print("Folder found: %s" % folder)
+            index(messages, folder_mbox, root)
+        elif verbose:
+            print("Folder is not a valid Maildir: %s" % folder, file=sys.stderr)
 
 
 def get_mailbox_dir(location):
