@@ -159,9 +159,13 @@ def index(messages, mbox, root):
         except TypeError:
             pass
 
-    for subdir in mbox.list_folders():
-        print("Subdir found: %s", subdir)
-        index(messages, subdir, root)
+    for folder in mbox.list_folders():
+        folder_mbox = mbox.get_folder(folder)
+        if is_maildir(folder_mbox._path):
+            print("Folder found: %s" % folder)
+            index(messages, folder_mbox, root)
+        elif verbose:
+            print("Folder is not a valid Maildir: %s" % folder, file=sys.stderr)
 
 
 def get_mailbox_dir(location):
